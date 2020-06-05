@@ -212,3 +212,18 @@ def test_blkid_cache_file_contains_no_labels(
     c.check(instance_blkid_cache_file_no_label)
     for metric in chain(gauge_metrics, rate_metrics):
         aggregator.assert_metric(metric, tags=['device:/dev/sda1', 'device_name:sda1'])
+
+
+@pytest.mark.usefixtures('psutil_mocks')
+def test_timeout():
+    """Test timeout configuration value is used."""
+    instance = {'timeout': 3}
+    c = Disk('disk', {}, [instance])
+
+    def no_timeout(fun):
+        return lambda *args: fun(args)
+
+    with mock.patch('datadog_checks.base.utils.timeout.timeout', return_value=no_timeout) as mock_timeout:
+        c.check(instance)
+
+    mock_timeout.assert_called_with(3)
